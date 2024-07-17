@@ -5,7 +5,7 @@ const router = express.Router();
 const roleController = require('../controllers/roleController');
 
 // Obtener todos los roles
-router.get('/', roleController.getAllRoles);
+router.get('/', roleController.getRoles);
 
 // Obtener un rol por su ID
 router.get('/:id', roleController.getRoleById);

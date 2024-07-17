@@ -5,13 +5,13 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 
 // Obtener todos los usuarios
-router.get('/', userController.getAllUsers);
+router.get('/', userController.getUsers);
 
 // Obtener un usuario por su ID
 router.get('/:id', userController.getUserById);
 
 // Registrar un nuevo usuario
-router.post('/', userController.registerUser);
+router.post('/', userController.createUser);
 
 // Actualizar un usuario por su ID
 router.put('/:id', userController.updateUser);

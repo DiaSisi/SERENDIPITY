@@ -5,7 +5,7 @@ const router = express.Router();
 const categoryController = require('../controllers/categoryController');
 
 // Obtener todas las categorías
-router.get('/', categoryController.getAllCategories);
+router.get('/', categoryController.getCategories);
 
 // Obtener una categoría por su ID
 router.get('/:id', categoryController.getCategoryById);

@@ -5,7 +5,7 @@ const router = express.Router();
 const purchaseController = require('../controllers/purchaseController');
 
 // Obtener todas las compras
-router.get('/', purchaseController.getAllPurchases);
+router.get('/', purchaseController.getPurchases);
 
 // Obtener una compra por su ID
 router.get('/:id', purchaseController.getPurchaseById);

@@ -2,30 +2,21 @@
 
 const Role = require('../models/Role');
 
-// Obtener todos los roles con paginación
-exports.getAllRoles = async (req, res) => {
+// Traer todos los roles
+exports.getRoles = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const roles = await Role.find()
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-    const count = await Role.countDocuments();
-    res.json({
-      roles,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
-    });
+    const roles = await Role.find({ status: 'active' });
+    res.json(roles);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Obtener un rol por su ID
+// Traer un rol por ID
 exports.getRoleById = async (req, res) => {
   try {
     const role = await Role.findById(req.params.id);
-    if (!role) return res.status(404).json({ message: 'Role not found' });
+    if (!role || role.status === 'inactive') return res.status(404).json({ message: 'Role not found' });
     res.json(role);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -46,7 +37,11 @@ exports.createRole = async (req, res) => {
 // Actualizar un rol
 exports.updateRole = async (req, res) => {
   try {
-    const role = await Role.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const role = await Role.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
     if (!role) return res.status(404).json({ message: 'Role not found' });
     res.json(role);
   } catch (err) {
@@ -54,10 +49,14 @@ exports.updateRole = async (req, res) => {
   }
 };
 
-// Eliminar un rol
+// Eliminar un rol (soft delete)
 exports.deleteRole = async (req, res) => {
   try {
-    const role = await Role.findByIdAndUpdate(req.params.id, { estado: 'inactivo', fechaEliminacion: Date.now() }, { new: true });
+    const role = await Role.findByIdAndUpdate(
+      req.params.id,
+      { status: 'inactive', deletedAt: Date.now() },
+      { new: true }
+    );
     if (!role) return res.status(404).json({ message: 'Role not found' });
     res.json({ message: 'Role deleted' });
   } catch (err) {

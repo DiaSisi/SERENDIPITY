@@ -2,15 +2,16 @@
 
 const Product = require('../models/Product');
 
-// Obtener todos los productos con paginación
-exports.getAllProducts = async (req, res) => {
+// Traer todos los productos con paginación
+exports.getProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const products = await Product.find()
+    const products = await Product.find({ status: 'active' })
+      .populate('category')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
-    const count = await Product.countDocuments();
+    const count = await Product.countDocuments({ status: 'active' });
     res.json({
       products,
       totalPages: Math.ceil(count / limit),
@@ -21,11 +22,11 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Obtener un producto por su ID
+// Traer un producto por ID
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
+    const product = await Product.findById(req.params.id).populate('category');
+    if (!product || product.status === 'inactive') return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -46,7 +47,11 @@ exports.createProduct = async (req, res) => {
 // Actualizar un producto
 exports.updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (err) {
@@ -54,10 +59,14 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// Eliminar un producto
+// Eliminar un producto (soft delete)
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, { estado: 'inactivo', fechaEliminacion: Date.now() }, { new: true });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: 'inactive', deletedAt: Date.now() },
+      { new: true }
+    );
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json({ message: 'Product deleted' });
   } catch (err) {

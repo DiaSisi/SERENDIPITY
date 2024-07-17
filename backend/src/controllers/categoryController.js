@@ -2,30 +2,21 @@
 
 const Category = require('../models/Category');
 
-// Obtener todas las categorías con paginación
-exports.getAllCategories = async (req, res) => {
+// Traer todas las categorías
+exports.getCategories = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const categories = await Category.find()
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-    const count = await Category.countDocuments();
-    res.json({
-      categories,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
-    });
+    const categories = await Category.find({ status: 'active' });
+    res.json(categories);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Obtener una categoría por su ID
+// Traer una categoría por ID
 exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-    if (!category) return res.status(404).json({ message: 'Category not found' });
+    if (!category || category.status === 'inactive') return res.status(404).json({ message: 'Category not found' });
     res.json(category);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -46,7 +37,11 @@ exports.createCategory = async (req, res) => {
 // Actualizar una categoría
 exports.updateCategory = async (req, res) => {
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
     if (!category) return res.status(404).json({ message: 'Category not found' });
     res.json(category);
   } catch (err) {
@@ -54,10 +49,14 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
-// Eliminar una categoría
+// Eliminar una categoría (soft delete)
 exports.deleteCategory = async (req, res) => {
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, { estado: 'inactivo', fechaEliminacion: Date.now() }, { new: true });
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      { status: 'inactive', deletedAt: Date.now() },
+      { new: true }
+    );
     if (!category) return res.status(404).json({ message: 'Category not found' });
     res.json({ message: 'Category deleted' });
   } catch (err) {

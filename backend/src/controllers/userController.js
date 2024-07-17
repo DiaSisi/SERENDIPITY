@@ -2,15 +2,15 @@
 
 const User = require('../models/User');
 
-// Obtener todos los usuarios con paginación
-exports.getAllUsers = async (req, res) => {
+// Traer todos los usuarios con paginación
+exports.getUsers = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const users = await User.find()
+    const users = await User.find({ status: 'active' })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
-    const count = await User.countDocuments();
+    const count = await User.countDocuments({ status: 'active' });
     res.json({
       users,
       totalPages: Math.ceil(count / limit),
@@ -21,19 +21,19 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Obtener un usuario por su ID
+// Traer un usuario por ID
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user || user.status === 'inactive') return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Registrar un nuevo usuario
-exports.registerUser = async (req, res) => {
+// Crear un nuevo usuario
+exports.createUser = async (req, res) => {
   const user = new User(req.body);
   try {
     const newUser = await user.save();
@@ -46,7 +46,11 @@ exports.registerUser = async (req, res) => {
 // Actualizar un usuario
 exports.updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -54,10 +58,14 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// Eliminar un usuario
+// Eliminar un usuario (soft delete)
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { estado: 'inactivo', fechaEliminacion: Date.now() }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status: 'inactive', deletedAt: Date.now() },
+      { new: true }
+    );
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'User deleted' });
   } catch (err) {

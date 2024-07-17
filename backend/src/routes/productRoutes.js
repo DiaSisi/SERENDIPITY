@@ -5,7 +5,7 @@ const router = express.Router();
 const productController = require('../controllers/productController');
 
 // Obtener todos los productos
-router.get('/', productController.getAllProducts);
+router.get('/', productController.getProducts);
 
 // Obtener un producto por su ID
 router.get('/:id', productController.getProductById);
